@@ -1,17 +1,21 @@
 package com.example.demo.entities;
 
 import javax.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "advisors")
-public class Advisor {
+@Table(name = "clients")
+public class Client {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    // Many clients belong to one advisor
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "advisor_id", nullable = false)
+    private Advisor advisor;
 
     @Column(nullable = false)
     private String firstName;
@@ -19,10 +23,14 @@ public class Advisor {
     @Column(nullable = false)
     private String lastName;
 
-    @Column(nullable = false, unique = true)
+    @Column
     private String email;
 
+    @Column
     private String phone;
+
+    @Column
+    private LocalDate dob;
 
     @Column(nullable = false)
     private Boolean isActive = true;
@@ -30,21 +38,24 @@ public class Advisor {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "advisor", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Client> clients = new ArrayList<>();
+    // Client has one portfolio (portfolio table contains client_id FK)
+    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Portfolio portfolio;
 
-    public Advisor() {}
+    public Client() {}
 
-    public Advisor(Long id, String firstName, String lastName, String email, String phone, Boolean isActive, LocalDateTime createdAt, LocalDateTime updatedAt, List<Client> clients) {
+    public Client(Long id, Advisor advisor, String firstName, String lastName, String email, String phone, LocalDate dob, Boolean isActive, LocalDateTime createdAt, LocalDateTime updatedAt, Portfolio portfolio) {
         this.id = id;
+        this.advisor = advisor;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.phone = phone;
+        this.dob = dob;
         this.isActive = isActive;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.clients = clients != null ? clients : new ArrayList<>();
+        this.portfolio = portfolio;
     }
 
     @PrePersist
@@ -58,9 +69,11 @@ public class Advisor {
         updatedAt = LocalDateTime.now();
     }
 
-    /* Getters & setters (no setId required) */
+    /* Getters & setters */
 
     public Long getId() { return id; }
+    public Advisor getAdvisor() { return advisor; }
+    public void setAdvisor(Advisor advisor) { this.advisor = advisor; }
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
     public String getLastName() { return lastName; }
@@ -69,20 +82,17 @@ public class Advisor {
     public void setEmail(String email) { this.email = email; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+    public LocalDate getDob() { return dob; }
+    public void setDob(LocalDate dob) { this.dob = dob; }
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public List<Client> getClients() { return clients; }
-    public void setClients(List<Client> clients) { this.clients = clients; }
-
-    /* Convenience helpers */
-    public void addClient(Client client) {
-        clients.add(client);
-        client.setAdvisor(this);
-    }
-    public void removeClient(Client client) {
-        clients.remove(client);
-        client.setAdvisor(null);
+    public Portfolio getPortfolio() { return portfolio; }
+    public void setPortfolio(Portfolio portfolio) {
+        this.portfolio = portfolio;
+        if (portfolio != null) {
+            portfolio.setClient(this);
+        }
     }
 }
